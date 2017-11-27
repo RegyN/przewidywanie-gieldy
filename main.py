@@ -73,7 +73,7 @@ def main():
         batch_num = 0
         sess.run(init)
 
-        while it < 10000:
+        while it < 3000:
             #######################################################################################################
             # TODO: Zmienić sposób wyznaczania batchy.
             # W tym momencie próbki podawane są zestawami po kolei tak jak leżą w tablicy. Może warto zmienić na
@@ -89,9 +89,12 @@ def main():
                 # Odkomentować, jak będą poprawione węzły accuracy i mistakes parenaście linijek wyżej
                 # acc = sess.run(accuracy, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
                 los = sess.run(loss, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
-                print("For iter ", it)
+                wynik = sess.run(prediction, feed_dict={dane_wej: tren_input[10:11], oczekiwane: tren_output[10:11]})
+                print('Uzyskane:    ' + str(wynik))
+                print('Rzeczywiste: ' + str(tren_output[10:11]))
+                print("Iteracja ", it)
                 # print("Accuracy ", acc)
-                print("Loss ", los)
+                print("Blad ", los)
                 print("__________________")
 
             it = it + 1
