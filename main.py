@@ -7,20 +7,16 @@ import DataConverter as dc
 # from random import shuffle
 
 
-def true_main():
-    sciezka_csv = "D:\Pobrane\gielda.csv"
-    dane = dc.wczytaj_csv(sciezka_csv)
-    dane_po_konwersji = dc.konwertuj_na_liczby(dane)
-    print(len(dane_po_konwersji))
-    for i, row in enumerate(dane_po_konwersji):
-        print(len(row))
-
-
+# TODO: Może rozbić main() na parę funkcji, ale DOPIERO jak już będzie działało jak należy.
 def main():
     sciezka_csv = "D:\Pobrane\gielda.csv"
     dane = dc.wczytaj_csv(sciezka_csv)
     dane = dc.konwertuj_na_liczby(dane)
     dane_test, dane_tren = dc.przygotuj_dane_tren_i_test(dane)
+
+    # TODO: Zrobić, żeby było mniej tych zmiennych, bo dużo miejsca w pamięci
+    # bo mam dane, dane_test, dane_tren, tren_input i tren_output, a wszystkie w zasadzie zawierają ten sam zestaw
+    # danych, tylko w różnych wersjach.
 
     tren_input = []
     tren_output = []
@@ -33,7 +29,7 @@ def main():
 
     dlugosc_pakietu = 720
     batch_size = 10
-    liczba_ukrytych = 24
+    liczba_ukrytych = 24    # Liczba komorek LSTM w warstwie
 
     dane_wej = tf.placeholder(tf.float32, [None, dlugosc_pakietu, 2])
     oczekiwane = tf.placeholder(tf.float32, [None, 5])
@@ -41,6 +37,7 @@ def main():
     weights = tf.Variable(tf.truncated_normal([liczba_ukrytych, int(oczekiwane.get_shape()[1])]))
     bias = tf.Variable(tf.constant(0.1, shape=[oczekiwane.get_shape()[1]]))
 
+    # TODO: Zrobić (jakoś) wiele komórek połączonych warstwami, tak jak opisywaliśmy w konspekcie
     komorka = tf.nn.rnn_cell.LSTMCell(liczba_ukrytych, state_is_tuple=True)
     wyjscia, state = tf.nn.dynamic_rnn(komorka, dane_wej, dtype=tf.float32)
 
@@ -49,16 +46,22 @@ def main():
 
     prediction = tf.matmul(last, weights) + bias
 
-    cross_entropy = -tf.reduce_sum(tf.log(tf.clip_by_value(prediction, 1e-10, 1.0)))
+    loss = tf.reduce_sum(tf.square(prediction - oczekiwane))
 
-    optimizer = tf.train.AdamOptimizer().minimize(cross_entropy)
+    optimizer = tf.train.AdamOptimizer().minimize(loss)
 
-    mistakes = tf.not_equal(tf.argmax(oczekiwane, axis=1), tf.argmax(prediction, axis=1))
+    ###############################################################################################################
+    mistakes = tf.not_equal(oczekiwane, prediction)
     accuracy = tf.reduce_mean(tf.cast(mistakes, tf.float32))
+    # TODO: Zrobić lepszą wersję dokładności, lub pominąć i po prostu oceniać loss
+    # To jest źle, ale nie wiem jak oceniać dokładność jeśli chodzi o floaty. Powinna mieścić się w zakresie 0 - 1.
+    # Im jest większa tym oczywiście lepiej. Poniżej jest wersja dla klasyfikacji używającej kodowania 1 z n,
+    # która do naszego projektu się ani trochę nie nadaje, ale chwilowo zostaje, do celów edukacyjnych.
+    ###############################################################################################################
 
     init = tf.global_variables_initializer()
 
-    tf.summary.scalar("accuracy", accuracy)
+    tf.summary.scalar("loss", loss)
     tf.summary.histogram("weights", weights)
     tf.summary.histogram("biases", bias)
     summary_op = tf.summary.merge_all()
@@ -68,7 +71,12 @@ def main():
         batch_num = 0
         sess.run(init)
 
-        while it < 100:
+        while it < 1000:
+            #######################################################################################################
+            # TODO: Zmienić sposób wyznaczania batchy.
+            # Chwilowo cały czas powtarzam jeden zestaw danych. Jak zmieni się, żeby co iterację zwiekszał się
+            # batch_num, to szybko kończą się dane. Docelowo powinno podawać po batch_size próbek, losowo
+            # wybieranych z zestawu
             batch_x = tren_input[batch_num*batch_size:batch_num*batch_size+batch_size]
             batch_y = tren_output[batch_num * batch_size:batch_num * batch_size + batch_size]
 
@@ -77,14 +85,14 @@ def main():
 
             if it % 10 == 0:
                 acc = sess.run(accuracy, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
-                # los = sess.run(loss, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
+                los = sess.run(loss, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
                 print("For iter ", it)
                 print("Accuracy ", acc)
-                # print("Loss ", los)
+                print("Loss ", los)
                 print("__________________")
 
             it = it + 1
-            batch_num += 1
+            batch_num += 0
 
 
 main()
