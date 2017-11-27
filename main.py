@@ -9,7 +9,7 @@ import DataConverter as dc
 
 # TODO: Może rozbić main() na parę funkcji, ale DOPIERO jak już będzie działało jak należy.
 def main():
-    sciezka_csv = "D:\Pobrane\gielda.csv"
+    sciezka_csv = ".\gielda.csv"
     dane = dc.wczytaj_csv(sciezka_csv)
     dane = dc.konwertuj_na_liczby(dane)
     dane_test, dane_tren = dc.przygotuj_dane_tren_i_test(dane)
