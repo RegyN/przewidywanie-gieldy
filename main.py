@@ -30,6 +30,7 @@ def main():
     dlugosc_pakietu = 720
     batch_size = 10
     liczba_ukrytych = 24    # Liczba komorek LSTM w warstwie
+    l_warstw = 3
 
     dane_wej = tf.placeholder(tf.float32, [None, dlugosc_pakietu, 2])
     oczekiwane = tf.placeholder(tf.float32, [None, 5])
@@ -51,9 +52,10 @@ def main():
     optimizer = tf.train.AdamOptimizer().minimize(loss)
 
     ###############################################################################################################
-    mistakes = tf.not_equal(oczekiwane, prediction)
-    accuracy = tf.reduce_mean(tf.cast(mistakes, tf.float32))
+    # mistakes = tf.not_equal(oczekiwane, prediction)
+    # accuracy = tf.reduce_mean(tf.cast(mistakes, tf.float32))
     # TODO: Zrobić lepszą wersję dokładności, lub pominąć i po prostu oceniać loss
+    # Chwilowo źle, wykomentowuje żeby nie spowalniało
     # To jest źle, ale nie wiem jak oceniać dokładność jeśli chodzi o floaty. Powinna mieścić się w zakresie 0 - 1.
     # Im jest większa tym oczywiście lepiej. Poniżej jest wersja dla klasyfikacji używającej kodowania 1 z n,
     # która do naszego projektu się ani trochę nie nadaje, ale chwilowo zostaje, do celów edukacyjnych.
@@ -71,28 +73,31 @@ def main():
         batch_num = 0
         sess.run(init)
 
-        while it < 1000:
+        while it < 10000:
             #######################################################################################################
             # TODO: Zmienić sposób wyznaczania batchy.
-            # Chwilowo cały czas powtarzam jeden zestaw danych. Jak zmieni się, żeby co iterację zwiekszał się
-            # batch_num, to szybko kończą się dane. Docelowo powinno podawać po batch_size próbek, losowo
-            # wybieranych z zestawu
-            batch_x = tren_input[batch_num*batch_size:batch_num*batch_size+batch_size]
-            batch_y = tren_output[batch_num * batch_size:batch_num * batch_size + batch_size]
+            # W tym momencie próbki podawane są zestawami po kolei tak jak leżą w tablicy. Może warto zmienić na
+            # jakiś losowy sposób, ale tak do końca nie wiem.
+            batch_x = tren_input[batch_num : batch_num + batch_size]
+            batch_y = tren_output[batch_num : batch_num + batch_size]
 
             _, summary = sess.run([optimizer, summary_op], feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
             writer.add_summary(summary, it)
 
             if it % 10 == 0:
-                acc = sess.run(accuracy, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
+                # Chwilowo wykomentowałem acc, bo i tak nasza wersja nic nie pokazuje sensownego, po co ma spowalniać.
+                # Odkomentować, jak będą poprawione węzły accuracy i mistakes parenaście linijek wyżej
+                # acc = sess.run(accuracy, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
                 los = sess.run(loss, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
                 print("For iter ", it)
-                print("Accuracy ", acc)
+                # print("Accuracy ", acc)
                 print("Loss ", los)
                 print("__________________")
 
             it = it + 1
-            batch_num += 0
+            batch_num += 1
+            if batch_num >= len(tren_input) - batch_size - 1:
+                batch_num = 0
 
 
 main()
