@@ -25,23 +25,20 @@ def konwertuj_na_liczby(dane_wej):
             dane_skonwertowane[j-1].append(temp)
     return dane_skonwertowane
 
-
-def normalizuj(waluta):
+def normalizuj(dane_wej):
     max = 0
-    for i, punkt in enumerate(waluta):
-        if punkt[1] > max:
-            max = punkt[1]
-    for i, punkt in enumerate(waluta):
-        waluta[i][1] = punkt[1]/max
-
-    return waluta
-
-
-def normalizuj_dane(dane_wej):
     for i, waluta in enumerate(dane_wej):
-        dane_wej[i] = normalizuj(waluta)
-
-    return dane_wej
+        for j, k in waluta:
+            if max < k:
+                max = k
+    znormalizowane = []
+    j = 0
+    for i, row in enumerate(dane_wej):
+        znormalizowane.append([])
+        for p, r in row:
+            temp = [p, r / max]
+            znormalizowane[i].append(temp)
+    return znormalizowane
 
 # Dzielę cały zestaw danych wejściowych na testowe i treningowe. Cała metodyka pewnie do poprawy, ale z grubsza robi
 # co trzeba. Jak zmieni się offset to będzie dużo więcej danych, ale mniej się od siebie nawzajem różniących

@@ -12,6 +12,7 @@ def main():
     sciezka_csv = ".\gielda.csv"
     dane = dc.wczytaj_csv(sciezka_csv)
     dane = dc.konwertuj_na_liczby(dane)
+    dane = dc.normalizuj(dane)
     dane_test, dane_tren = dc.przygotuj_dane_tren_i_test(dane)
 
     # TODO: Zrobić, żeby było mniej tych zmiennych, bo dużo miejsca w pamięci
@@ -82,9 +83,9 @@ def main():
             batch_y = tren_output[batch_num : batch_num + batch_size]
 
             _, summary = sess.run([optimizer, summary_op], feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
-            writer.add_summary(summary, it)
 
             if it % 10 == 0:
+                writer.add_summary(summary, it)
                 # Chwilowo wykomentowałem acc, bo i tak nasza wersja nic nie pokazuje sensownego, po co ma spowalniać.
                 # Odkomentować, jak będą poprawione węzły accuracy i mistakes parenaście linijek wyżej
                 # acc = sess.run(accuracy, feed_dict={dane_wej: batch_x, oczekiwane: batch_y})
