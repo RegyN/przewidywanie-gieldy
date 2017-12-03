@@ -12,6 +12,9 @@ def main():
     dane = dc.wczytaj_csv(sciezka_csv)
     dane = dc.konwertuj_na_liczby(dane)
     dane = dc.normalizuj_dane(dane)
+    dane = dc.dodaj_ruchoma_srednia(dane, 5)
+    dane = dc.dodaj_ruchoma_srednia(dane, 12)
+    dane = dc.dodaj_ruchoma_srednia(dane, 30)
     dane_test, dane_tren = dc.przygotuj_dane_tren_i_test(dane)
 
     tren_input = []
@@ -25,29 +28,33 @@ def main():
 
     dlugosc_pakietu = 720
     batch_size = 25
-    l_ukrytych = 150    # Liczba komorek LSTM w warstwie
+    l_ukrytych = 50    # Liczba komorek LSTM w warstwie
     l_warstw = 2
-    l_wejsc_sieci = 2
+    l_wejsc_sieci = 5
     l_wyjsc_sieci = 5
 
     # Tworzę model sekwencyjny
     model = keras.Sequential()
-    model.add(Dense(units=20, input_shape=(720,2,), activation='linear'))
-    # Dodaję warstwe LSTM
+    model.add(Dense(units=20, input_shape=(720, l_wejsc_sieci,), activation='linear'))
+    # Dodaję warstwę LSTM
+    model.add(LSTM(units=l_ukrytych, return_sequences=True, use_bias='true'))
+
+    model.add(Dense(units=l_ukrytych, activation='tanh'))
+    # Druga warstwa LSTM
     model.add(LSTM(units=l_ukrytych, return_sequences=False, use_bias='true'))
-    # Dodaję warstwe przejsciową, dostosowującą liczbę wyjść
+    # Dodaję warstwę przejściową, dostosowującą liczbę wyjść
     model.add(Dense(units=l_wyjsc_sieci, activation='tanh'))
     # Wybieram sposób trenowania sieci
-    optimizer = keras.optimizers.SGD(lr=0.15, momentum=0.15, decay=0.0, nesterov=False)
+    optimizer = keras.optimizers.SGD(lr=0.1, momentum=0.1, decay=0.0, nesterov=False)
     model.compile(loss="mean_squared_error", optimizer=optimizer)
 
     # Trenuję sieć
-    model.fit(tren_input, tren_output, batch_size=batch_size, epochs=20, validation_split=0.07, verbose=1)
+    model.fit(tren_input, tren_output, batch_size=batch_size, epochs=3, validation_split=0.07, verbose=1)
     predicted = model.predict(tren_input)
-    rmse = np.sqrt(((predicted - tren_output) ** 2).mean(axis=0))
-    print(predicted[0])
-    print(tren_output[0])
-    print(rmse)
+    # rmse = np.sqrt(((predicted - tren_output) ** 2).mean(axis=0))
+    print(predicted[15])
+    print(tren_output[15])
+    # print(rmse)
 
 
 

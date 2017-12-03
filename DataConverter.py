@@ -25,20 +25,24 @@ def konwertuj_na_liczby(dane_wej):
             dane_skonwertowane[j-1].append(temp)
     return dane_skonwertowane
 
-def normalizuj(dane_wej):
+
+def normalizuj(waluta):
     max = 0
+    for i, punkt in enumerate(waluta):
+        if punkt[1] > max:
+            max = punkt[1]
+    for i, punkt in enumerate(waluta):
+        waluta[i][1] = punkt[1]/max
+
+    return waluta
+
+
+def normalizuj_dane(dane_wej):
     for i, waluta in enumerate(dane_wej):
-        for j, k in waluta:
-            if max < k:
-                max = k
-    znormalizowane = []
-    j = 0
-    for i, row in enumerate(dane_wej):
-        znormalizowane.append([])
-        for p, r in row:
-            temp = [p, r / max]
-            znormalizowane[i].append(temp)
-    return znormalizowane
+        dane_wej[i] = normalizuj(waluta)
+
+    return dane_wej
+
 
 # Dzielę cały zestaw danych wejściowych na testowe i treningowe. Cała metodyka pewnie do poprawy, ale z grubsza robi
 # co trzeba. Jak zmieni się offset to będzie dużo więcej danych, ale mniej się od siebie nawzajem różniących
@@ -58,13 +62,33 @@ def przygotuj_dane_tren_i_test(dane_wej):
             for j in range(0, liczba_pakietow):    # tworze pakiety z danej waluty
                 pakiet = []
                 for k in range(0, dlugosc_pakietu):     # wpisuje punkty do danego pakietu tren.
-                    pakiet.append([waluta[offset*j+k][0], waluta[offset*j+k][1]])
+                    pakiet.append([waluta[offset*j+k][0], waluta[offset*j+k][1], waluta[offset*j+k][2], waluta[offset*j+k][3], waluta[offset*j+k][4]])
 
                 if j <= liczba_pakietow_tren:
                     dane_tren.append(pakiet)
                 else:
                     dane_test.append(pakiet)
-
-        print("Zrobiona waluta nr " + str(i))
-
+    print("Dane testowe i treningowe gotowe")
     return dane_test, dane_tren
+
+
+def dodaj_ruchoma_srednia(dane_wej, dlugosc):
+
+    skladniki = []
+    suma = 0.0
+    for i, waluta in enumerate(dane_wej):
+        for j, row in enumerate(waluta):
+            if j < dlugosc:
+                suma = suma + row[1]
+                skladniki.append(row[1])
+                row.append(suma/(j+1))
+            else:
+                suma = suma + row[1] - skladniki.pop(0)
+                skladniki.append(row[1])
+                row.append(suma/dlugosc)
+
+    return dane_wej
+
+
+
+
