@@ -1,0 +1,7 @@
+przewidywanie trendu - jedna funkcja na bazie całego wzorca prosta R2 i jej nachylenie to trendu
+elman - RNN
+zapisywanie i wczytywanie wag (zapisywanie sieci)
+interfejs użytkownika w konsoli - liczba warstw, liczba LSTM, liczba epok, długość pakietów itp
+rysowanie wykresu
+używanie testowych danych a nie validation_split
+gdy będą parametry wejściowe to zrobić skrypt uruchamiający po kolei program z różnymi parametrami sieci żeby porównać wyniki
