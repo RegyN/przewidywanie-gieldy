@@ -1,5 +1,6 @@
 import tensorflow as tf
 import DataConverter as dc
+import csv
 import keras
 import numpy as np
 from keras import optimizers
@@ -7,55 +8,115 @@ from keras.layers.recurrent import LSTM
 from keras.layers.core import Dense, Activation
 
 
-def main():
+class LossHistory(keras.callbacks.Callback):
+    def on_train_begin(self, logs={}):
+        self.losses = []
+
+    def on_batch_end(self, batch, logs={}):
+        self.losses.append(logs.get('loss'))
+
+
+def zapisz_historie(dane_hist, sciezka):
+    plik_csv = open(sciezka, "wt")
+    writer_csv = csv.writer(plik_csv, delimiter=',', quotechar='|', quoting=csv.QUOTE_NONE)
+    for i, row in enumerate(dane_hist.losses):
+        writer_csv.writerow([row])
+
+
+def wsp_sxy_reg_lin(dane):
+    ret = 0
+    for i, tick in enumerate(dane):
+        ret += (tick[1] * (i + 1))
+    return ret
+
+
+def wsp_sy_reg_lin(dane):
+    ret = 0
+    for i, tick in enumerate(dane):
+        ret += tick[1]
+    return ret
+
+
+def wsp_a_reg_lin(dane):
+    n = len(dane)
+    return ((n * wsp_sxy_reg_lin(dane)) - ((n * (n + 1) / 2) * wsp_sy_reg_lin(dane))) / (n * n * ((5 * n * n) - 1) / 12)
+
+
+def zrob_jeden_trening(l_warstw=2, l_komorek_lstm=20, bias='true', l_komorek_we=80, l_komorek_wy=80,
+                       aktywacja_przejsc='linear', learning_rate=0.15, momentum=0.15, decay=0.0, batch_size=60,
+                       l_epok=1, val_split=0.2, offset=24, trybwartosci=True):
     sciezka_csv = ".\gielda.csv"
     dane = dc.wczytaj_csv(sciezka_csv)
     dane = dc.konwertuj_na_liczby(dane)
     dane = dc.normalizuj_dane(dane)
-    dane = dc.dodaj_ruchoma_srednia(dane, 5)
     dane = dc.dodaj_ruchoma_srednia(dane, 12)
     dane = dc.dodaj_ruchoma_srednia(dane, 30)
-    dane_test, dane_tren = dc.przygotuj_dane_tren_i_test(dane)
+    dane_test, dane_tren = dc.przygotuj_dane_tren_i_test(dane, offset=offset)
 
     tren_input = []
     tren_output = []
 
+    dlug_pak = 720
+
     for i, pakiet in enumerate(dane_tren):
-        pakiet_in = pakiet[0:720]
-        pakiet_out = [pakiet[743][1], pakiet[767][1], pakiet[791][1], pakiet[815][1], pakiet[839][1]]
+        pakiet_in = pakiet[0:dlug_pak]
+        if trybwartosci == True:
+            pakiet_out = [pakiet[dlug_pak + 24 - 1][1],
+                          pakiet[dlug_pak + 2 * 24 - 1][1],
+                          pakiet[dlug_pak + 3 * 24 - 1][1],
+                          pakiet[dlug_pak + 4 * 24 - 1][1],
+                          pakiet[dlug_pak + 5 * 24 - 1][1]]
+        else:
+            a = wsp_a_reg_lin(pakiet)
+            trend = 0
+            if a > 1 / 20000:
+                trend = 5
+            elif a > 1 / 200000:
+                trend = 4
+            elif a > -1 / 200000:
+                trend = 3
+            elif a > -1 / 20000:
+                trend = 2
+            else:
+                trend = 1
+            pakiet_out = trend
         tren_input.append(pakiet_in)
         tren_output.append(pakiet_out)
 
-    dlugosc_pakietu = 720
-    batch_size = 25
-    l_ukrytych = 50    # Liczba komorek LSTM w warstwie
-    l_warstw = 2
-    l_wejsc_sieci = 5
+    l_wejsc_sieci = 4
     l_wyjsc_sieci = 5
 
     # Tworzę model sekwencyjny
     model = keras.Sequential()
-    model.add(Dense(units=20, input_shape=(720, l_wejsc_sieci,), activation='linear'))
-    # Dodaję warstwę LSTM
-    model.add(LSTM(units=l_ukrytych, return_sequences=True, use_bias='true'))
+    model.add(Dense(units=l_komorek_we, input_shape=(720, l_wejsc_sieci,), activation=aktywacja_przejsc))
 
-    model.add(Dense(units=l_ukrytych, activation='tanh'))
-    # Druga warstwa LSTM
-    model.add(LSTM(units=l_ukrytych, return_sequences=False, use_bias='true'))
-    # Dodaję warstwę przejściową, dostosowującą liczbę wyjść
-    model.add(Dense(units=l_wyjsc_sieci, activation='tanh'))
+    # Dodaję opcjonalne warstwy LSTM
+    for i in range(0, l_warstw - 1):
+        model.add(LSTM(units=l_komorek_lstm, return_sequences=True, use_bias=bias))
+    # Ostatnia warstwa LSTM
+    model.add(LSTM(units=l_komorek_lstm, return_sequences=False, use_bias=bias))
+    # Dodaję warstwy przejściowe, dostosowujące liczbę wyjść
+    model.add(Dense(units=l_komorek_wy, activation=aktywacja_przejsc))
+    model.add(Dense(units=l_wyjsc_sieci, activation=aktywacja_przejsc))
     # Wybieram sposób trenowania sieci
-    optimizer = keras.optimizers.SGD(lr=0.1, momentum=0.1, decay=0.0, nesterov=False)
+    optimizer = keras.optimizers.SGD(lr=learning_rate, momentum=momentum, decay=decay, nesterov=False)
     model.compile(loss="mean_squared_error", optimizer=optimizer)
 
     # Trenuję sieć
-    model.fit(tren_input, tren_output, batch_size=batch_size, epochs=3, validation_split=0.07, verbose=1)
+    history = LossHistory()
+    model.fit(tren_input, tren_output, batch_size=batch_size, epochs=l_epok, validation_split=val_split,
+              verbose=1, callbacks=[history])
     predicted = model.predict(tren_input)
-    # rmse = np.sqrt(((predicted - tren_output) ** 2).mean(axis=0))
     print(predicted[15])
     print(tren_output[15])
-    # print(rmse)
+    nazwa = "W" + str(l_warstw) + "K" + str(l_komorek_lstm) + "LR" + str(learning_rate) + "M" + str(
+        momentum) + "B" + str(batch_size) \
+            + ".csv"
+    zapisz_historie(history, nazwa)
 
+
+def main():
+    zrob_jeden_trening(l_warstw=2, l_komorek_lstm=20, offset=25, aktywacja_przejsc='linear', l_epok=1, trybwartosci=True)
 
 
 main()
