@@ -115,6 +115,7 @@ def zrob_jeden_trening(l_warstw=2, l_komorek_lstm=20, bias='true', l_komorek_we=
     zapisz_historie(history, nazwa)
 
 
+
 def main():
     zrob_jeden_trening(l_warstw=2, l_komorek_lstm=20, offset=25, aktywacja_przejsc='linear', l_epok=1, trybwartosci=True)
 
