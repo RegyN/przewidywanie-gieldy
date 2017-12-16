@@ -1,11 +1,12 @@
 import tensorflow as tf
-import DataConverter as dc
+import numpy as np
+import model_utilities as mu
+import data_converter as dc
 import csv
 import keras
-import numpy as np
 from keras import optimizers
 from keras.layers.recurrent import LSTM
-from keras.layers.core import Dense, Activation
+from keras.layers import Dense, Activation
 
 
 class LossHistory(keras.callbacks.Callback):
@@ -17,6 +18,7 @@ class LossHistory(keras.callbacks.Callback):
 
 
 def zapisz_historie(dane_hist, sciezka):
+    sciezka = ".\logs\\"+sciezka
     plik_csv = open(sciezka, "wt")
     writer_csv = csv.writer(plik_csv, delimiter=',', quotechar='|', quoting=csv.QUOTE_NONE)
     for i, row in enumerate(dane_hist.losses):
@@ -58,14 +60,7 @@ def zrob_jeden_trening(l_warstw=2, l_kom_lstm=20, bias='true', l_komorek_we=80,
     dlug_pak = 720
     for i, pakiet in enumerate(dane_tren):
         pakiet_in = pakiet[0:dlug_pak]
-
-        pakiet_out = [pakiet[dlug_pak + 24 - 1][1],
-                      pakiet[dlug_pak + 2 * 24 - 1][1],
-                      pakiet[dlug_pak + 3 * 24 - 1][1],
-                      pakiet[dlug_pak + 4 * 24 - 1][1],
-                      pakiet[dlug_pak + 5 * 24 - 1][1]]
-
-        if trybwartosci == True:
+        if trybwartosci:
             pakiet_out = [pakiet[dlug_pak + 24 - 1][1],
                           pakiet[dlug_pak + 2 * 24 - 1][1],
                           pakiet[dlug_pak + 3 * 24 - 1][1],
@@ -114,13 +109,14 @@ def zrob_jeden_trening(l_warstw=2, l_kom_lstm=20, bias='true', l_komorek_we=80,
     # predicted = model.predict(tren_in)
     # print(predicted[15])
     # print(tren_out[15])
-    nazwa = "W"+str(l_warstw)+"K"+str(l_kom_lstm)+"LR"+str(learn_rate)+"M"+str(momentum)+"B"+str(batch_size)\
-             + ".csv"
+    nazwa = ("W"+str(l_warstw)+"K"+str(l_kom_lstm)+"LR"+str(learn_rate)+"M"+str(momentum)+"B"+str(batch_size)
+             + "A"+akt_przejsc+".csv")
     zapisz_historie(history, nazwa)
 
 
 def main():
-    zrob_jeden_trening(l_warstw=2, l_kom_lstm=20, akt_przejsc='linear', l_epok=1, trybwartosci=True)
+    zrob_jeden_trening(l_warstw=1, l_kom_lstm=5, akt_przejsc='relu', l_epok=3, trybwartosci=True,
+                       l_komorek_wy=10, l_komorek_we=10)
 
 
 main()
