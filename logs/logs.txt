@@ -1,0 +1,1 @@
+Do tego folderu lecą pliki zapisujące spadek błędu w kolejnych iteracjach.
