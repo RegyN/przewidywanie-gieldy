@@ -26,14 +26,14 @@ class ElmanRNN:
 
             with tf.name_scope('embedding'):
                 self.idxs = tf.reshape(self.data, (-1,)) + 1
-                self.emb = tf.Variable(name='emb', initial_value=ElmanRNN.init(num_vocab + 1, num_embedding))
+                self.emb = tf.Variable(name='emb', initial_value=ElmanRNN.initialize(num_vocab + 1, num_embedding))
                 self.params['emb'] = self.emb
                 self.input_emb = tf.gather(self.emb, self.idxs)
                 self.input_emb_fix = tf.where(tf.is_nan(self.input_emb), tf.zeros_like(self.input_emb), self.input_emb)
 
             with tf.name_scope('x'):
                 num_inputs = tf.shape(self.data)[0]
-                self.wx = tf.Variable(name='wx', initial_value=ElmanRNN.init(num_embedding * num_context, num_hidden))
+                self.wx = tf.Variable(name='wx', initial_value=ElmanRNN.initialize(num_embedding * num_context, num_hidden))
                 self.params['wx'] = self.wx
                 self.x = tf.reshape(self.input_emb_fix, (num_inputs, num_embedding * num_context), name='x')
 
@@ -45,12 +45,12 @@ class ElmanRNN:
                 s_0 = tf.constant(np.matrix([0.] * num_classes))
                 y_0 = tf.constant(0, 'int64')
             with tf.name_scope('hidden'):
-                self.wh = tf.Variable(name='wh', initial_value=ElmanRNN.init(num_hidden, num_hidden))
+                self.wh = tf.Variable(name='wh', initial_value=ElmanRNN.initialize(num_hidden, num_hidden))
                 self.bh = tf.Variable(name='bh', initial_value=np.zeros((1, num_hidden)))
                 self.params['wh'] = self.wh
                 self.params['bh'] = self.bh
             with tf.name_scope('classes'):
-                self.w = tf.Variable(name='w', initial_value=ElmanRNN.init(num_hidden, num_classes))
+                self.w = tf.Variable(name='w', initial_value=ElmanRNN.initialize(num_hidden, num_classes))
                 self.b = tf.Variable(name='b', initial_value=np.zeros((1, num_classes)))
                 self.params['w'] = self.w
                 self.params['b'] = self.b
@@ -67,7 +67,7 @@ class ElmanRNN:
                 self.loss = -tf.reduce_sum(self.target * tf.log(tf.clip_by_value(self.s, 1e-20, 1.0)))
 
     @staticmethod
-    def init(*shape):
+    def initialize(*shape):
         return 0.001 * np.random.uniform(-1., 1., shape)
 
     def recurrence(self, old_state, x_t):
