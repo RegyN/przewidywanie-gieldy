@@ -50,10 +50,7 @@ def zrob_jeden_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=80,
     tren_input, tren_output = zrob_dane(sciezka_csv, trybwartosci)
 
     l_wejsc_sieci = 4
-    if trybwartosci:
-        l_wyjsc_sieci = 5
-    else:
-        l_wyjsc_sieci = 1
+    l_wyjsc_sieci = 5
 
     # Tworzę model sieci
     if typ == 'lstm':
@@ -144,8 +141,11 @@ def zrob_dane(sciezka_csv, trybwartosci):
 
 
 def main():
-    zrob_jeden_trening(l_warstw=2, l_kom_ukr=32, akt_przejsc='linear', l_epok=5, trybwartosci=False,
-                       l_komorek_wy=100, l_komorek_we=20, typ='lstm')
+    zrob_jeden_trening(l_warstw=2, l_kom_ukr=20, akt_przejsc='linear', l_epok=1, trybwartosci=True,
+                       l_komorek_wy=100, l_komorek_we=10, typ='lstm')
+
+    # zrob_jeden_trening(l_warstw=3, l_kom_ukr=32, akt_przejsc='linear', l_epok=5, trybwartosci=True,
+    #                    l_komorek_wy=100, l_komorek_we=10, typ='rnn')
 
 
 main()
