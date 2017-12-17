@@ -66,6 +66,7 @@ def zrob_jeden_trening(l_warstw=2, l_kom_lstm=20, bias='true', l_komorek_we=80,
                           pakiet[dlug_pak + 3 * 24 - 1][1],
                           pakiet[dlug_pak + 4 * 24 - 1][1],
                           pakiet[dlug_pak + 5 * 24 - 1][1]]
+            l_wyjsc_sieci = 5
         else:
             a = wsp_a_reg_lin(pakiet)
             trend = 0
@@ -80,11 +81,11 @@ def zrob_jeden_trening(l_warstw=2, l_kom_lstm=20, bias='true', l_komorek_we=80,
             else:
                 trend = 1
             pakiet_out = trend
+            l_wyjsc_sieci = 1
         tren_input.append(pakiet_in)
         tren_output.append(pakiet_out)
 
     l_wejsc_sieci = 4
-    l_wyjsc_sieci = 5
 
     # Tworzę model sekwencyjny
     model = keras.Sequential()
@@ -115,7 +116,7 @@ def zrob_jeden_trening(l_warstw=2, l_kom_lstm=20, bias='true', l_komorek_we=80,
 
 
 def main():
-    zrob_jeden_trening(l_warstw=1, l_kom_lstm=5, akt_przejsc='relu', l_epok=3, trybwartosci=True,
+    zrob_jeden_trening(l_warstw=1, l_kom_lstm=5, akt_przejsc='relu', l_epok=3, trybwartosci=False,
                        l_komorek_wy=10, l_komorek_we=10)
 
 
