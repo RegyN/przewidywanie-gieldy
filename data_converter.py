@@ -1,4 +1,5 @@
 import csv
+import random as rd
 
 
 def wczytaj_csv(sciezka):
@@ -63,8 +64,7 @@ def przygotuj_dane_tren_i_test(dane_wej, offset=24, dlug_pak=840, l_pkt_test=360
                 for k in range(0, dlugosc_pakietu):     # wpisuje punkty do danego pakietu tren.
                     pakiet.append([waluta[offset*j+k][0],
                                    waluta[offset*j+k][1],
-                                   waluta[offset*j+k][2],
-                                   waluta[offset*j+k][3]])
+                                   waluta[offset*j+k][2]])
 
                 if j <= liczba_pakietow_tren:
                     dane_tren.append(pakiet)
@@ -74,11 +74,25 @@ def przygotuj_dane_tren_i_test(dane_wej, offset=24, dlug_pak=840, l_pkt_test=360
     return dane_test, dane_tren
 
 
+def zrob_dane_eksperymentalne(dlug_pak=840, liczba_pak=1500):
+    rd.seed(123)
+    dane_test = []
+    dane_tren = []
+    for i in range(0, liczba_pak):    # tworze pakiety z danej waluty
+        pakiet = []
+        for j in range(0, dlug_pak):     # wpisuje punkty do danego pakietu tren.
+            pakiet.append([0, ((j+1) + rd.random()/3 - 0.16)/840])
+
+        dane_tren.append(pakiet)
+    print("Eksperymentalne dane testowe i treningowe gotowe")
+    return dane_test, dane_tren
+
+
 def dodaj_ruchoma_srednia(dane_wej, dlugosc):
 
     skladniki = []
-    suma = 0.0
     for i, waluta in enumerate(dane_wej):
+        suma = 0.0
         for j, row in enumerate(waluta):
             if j < dlugosc:
                 suma = suma + row[1]

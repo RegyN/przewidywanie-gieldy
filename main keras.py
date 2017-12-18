@@ -4,6 +4,7 @@ import model_utilities as mu
 import data_converter as dc
 import csv
 import keras
+from keras.callbacks import EarlyStopping
 from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers import Dense, Activation
 
@@ -49,7 +50,7 @@ def zrob_jeden_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=80,
     sciezka_csv = ".\gielda.csv"
     tren_input, tren_output = zrob_dane(sciezka_csv, trybwartosci)
 
-    l_wejsc_sieci = 4
+    l_wejsc_sieci = 2
     if trybwartosci:
         l_wyjsc_sieci = 5
     else:
@@ -69,27 +70,27 @@ def zrob_jeden_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=80,
 
     # Trenuję sieć
     history = LossHistory()
+    stopper = EarlyStopping(patience=2)
     model.fit(tren_input, tren_output, batch_size=batch_size, epochs=l_epok, validation_split=val_split,
-              verbose=1, callbacks=[history])
+              verbose=1, callbacks=[history, stopper])
     predicted = model.predict(tren_input)
     print(predicted[15])
     print(tren_output[15])
-    print(tren_input[15][-1][1])
-    nazwa = ("W"+str(l_warstw)+"K"+str(l_kom_ukr)+"LR"+str(learn_rate)+"M"+str(momentum)+"B"+str(batch_size)
-             + "A"+akt_przejsc+".csv")
+    # print(tren_input[15][-1][1])
+    nazwa = (typ+"W"+str(l_warstw)+"K"+str(l_kom_ukr)+"LR"+str('%.2F' % learn_rate)+"M"+str('%.2F' % momentum)
+             + "B"+str(batch_size)+"A"+akt_przejsc+".csv")
     zapisz_historie(history, nazwa)
 
 
 def zrob_model_lstm(akt_przejsc, bias, l_kom_lstm, l_komorek_we, l_warstw, l_wejsc_sieci, l_wyjsc_sieci):
     model = keras.Sequential()
-    model.add(Dense(units=l_komorek_we, input_shape=(720, l_wejsc_sieci,), activation=akt_przejsc))
-    # Dodaję opcjonalne warstwy LSTM
+    # model.add(Dense(units=l_komorek_we,  activation=akt_przejsc))
+    model.add(LSTM(input_shape=(720, l_wejsc_sieci,), units=l_kom_lstm, return_sequences=True, use_bias=bias))
     for i in range(0, l_warstw - 1):
         model.add(LSTM(units=l_kom_lstm, return_sequences=True, use_bias=bias))
-    # Ostatnia warstwa LSTM
-    model.add(LSTM(units=l_kom_lstm, return_sequences=False, use_bias=bias))
     # Dodaję warstwy przejściowe, dostosowujące liczbę wyjść
-    model.add(Dense(units=l_wyjsc_sieci, activation=akt_przejsc))
+    model.add(LSTM(units=5, return_sequences=False, use_bias=bias))
+    # model.add(Dense(units=l_wyjsc_sieci, activation=akt_przejsc))
     return model
 
 
@@ -110,14 +111,17 @@ def zrob_dane(sciezka_csv, trybwartosci):
     dane = dc.wczytaj_csv(sciezka_csv)
     dane = dc.konwertuj_na_liczby(dane)
     dane = dc.normalizuj_dane(dane)
-    dane = dc.dodaj_ruchoma_srednia(dane, 12)
-    dane = dc.dodaj_ruchoma_srednia(dane, 30)
+    dc.dodaj_ruchoma_srednia(dane, 15)
     dane_test, dane_tren = dc.przygotuj_dane_tren_i_test(dane, offset=24)
+    # dane_test, dane_tren = dc.zrob_dane_eksperymentalne()
     tren_input = []
     tren_output = []
     dlug_pak = 720
     for i, pakiet in enumerate(dane_tren):
-        pakiet_in = pakiet[0:dlug_pak]
+        # pakiet_in = pakiet[0:dlug_pak]
+        pakiet_in = []
+        for j in range(0, dlug_pak):
+            pakiet_in.append([pakiet[j][2], pakiet[j][1]])
         if trybwartosci:
             pakiet_out = [pakiet[dlug_pak + 24 - 1][1],
                           pakiet[dlug_pak + 2 * 24 - 1][1],
@@ -144,8 +148,25 @@ def zrob_dane(sciezka_csv, trybwartosci):
 
 
 def main():
-    zrob_jeden_trening(l_warstw=2, l_kom_ukr=32, akt_przejsc='linear', l_epok=5, trybwartosci=False,
-                       l_komorek_wy=100, l_komorek_we=20, typ='lstm')
+    # for i in range(1, 3):
+    #     for j in range(3, 7):
+    #         for k in range(3, 7):
+    #             print("-------------------")
+    #             print("w: 2 kom: "+str(i*10)+" lr: "+str(j/7)+" mom: "+str(k/7))
+    #             print("-------------------")
+    #             zrob_jeden_trening(l_warstw=2, l_kom_ukr=i*10, akt_przejsc='sigmoid', l_epok=15, trybwartosci=True,
+    #                                l_komorek_wy=100, l_komorek_we=20, typ='lstm', learn_rate=j/7, momentum=k/7)
+    #
+    # for i in range(2, 3):
+    #     for j in range(4, 7):
+    #         for k in range(4, 7):
+    #             print("-------------------")
+    #             print("w: 1 kom: "+str(i*10)+" lr: "+str(j/7)+" mom: "+str(k/7))
+    #             print("-------------------")
+    #             zrob_jeden_trening(l_warstw=1, l_kom_ukr=i*10, akt_przejsc='sigmoid', l_epok=15, trybwartosci=True,
+    #                                l_komorek_wy=100, l_komorek_we=20, typ='lstm', learn_rate=j/7, momentum=k/7)
+    zrob_jeden_trening(l_warstw=2, l_kom_ukr=10, akt_przejsc='sigmoid', l_epok=15, trybwartosci=True,
+                       l_komorek_wy=100, l_komorek_we=20, typ='lstm', learn_rate=0.3, momentum=0.5)
 
 
 main()
