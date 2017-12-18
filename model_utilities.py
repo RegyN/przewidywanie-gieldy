@@ -8,11 +8,11 @@ from keras.models import load_model
 
 
 def zapisz_model(model, sciezka):
-    model.save(sciezka)
+    model.save(".\logs\\"+sciezka)
 
 
 def wczytaj_model(sciezka):
-    model = load_model(sciezka)
+    model = load_model(".\logs\\"+sciezka)
     return model
 
 

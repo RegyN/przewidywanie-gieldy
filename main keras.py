@@ -7,6 +7,7 @@ import keras
 from keras.callbacks import EarlyStopping
 from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers import Dense, Activation
+from wykresy import wczytaj_wykres, rysuj_wykres
 
 
 class LossHistory(keras.callbacks.Callback):
@@ -78,8 +79,9 @@ def zrob_jeden_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=80,
     print(tren_output[15])
     # print(tren_input[15][-1][1])
     nazwa = (typ+"W"+str(l_warstw)+"K"+str(l_kom_ukr)+"LR"+str('%.2F' % learn_rate)+"M"+str('%.2F' % momentum)
-             + "B"+str(batch_size)+"A"+akt_przejsc+".csv")
-    zapisz_historie(history, nazwa)
+             + "B"+str(batch_size)+"A"+akt_przejsc)
+    zapisz_historie(history, nazwa+".csv")
+    mu.zapisz_model(model, nazwa+".h5")
 
 
 def zrob_model_lstm(akt_przejsc, bias, l_kom_lstm, l_komorek_we, l_warstw, l_wejsc_sieci, l_wyjsc_sieci):
@@ -121,7 +123,7 @@ def zrob_dane(sciezka_csv, trybwartosci):
         # pakiet_in = pakiet[0:dlug_pak]
         pakiet_in = []
         for j in range(0, dlug_pak):
-            pakiet_in.append([pakiet[j][2], pakiet[j][1]])
+            pakiet_in.append([pakiet[j][0], pakiet[j][1]])
         if trybwartosci:
             pakiet_out = [pakiet[dlug_pak + 24 - 1][1],
                           pakiet[dlug_pak + 2 * 24 - 1][1],
@@ -142,9 +144,9 @@ def zrob_dane(sciezka_csv, trybwartosci):
             else:
                 trend = 1
             pakiet_out = trend
-        tren_input.append(pakiet_in)
-        tren_output.append(pakiet_out)
-    return tren_input, tren_output
+        tren_input.append(np.array(pakiet_in))
+        tren_output.append(np.array(pakiet_out))
+    return np.array(tren_input), np.array(tren_output)
 
 
 def main():
@@ -165,8 +167,22 @@ def main():
     #             print("-------------------")
     #             zrob_jeden_trening(l_warstw=1, l_kom_ukr=i*10, akt_przejsc='sigmoid', l_epok=15, trybwartosci=True,
     #                                l_komorek_wy=100, l_komorek_we=20, typ='lstm', learn_rate=j/7, momentum=k/7)
-    zrob_jeden_trening(l_warstw=2, l_kom_ukr=10, akt_przejsc='sigmoid', l_epok=15, trybwartosci=True,
-                       l_komorek_wy=100, l_komorek_we=20, typ='lstm', learn_rate=0.3, momentum=0.5)
+    print("Przewidywanie gieldy kryptowalut")
+    wybor = ""
+    while True:
+        print("")
+        wybor = input("1- uczenie sieci 2- wczytanie wykresu 0- wyjscie z programu")
+        if int(wybor) == 1:
+            zrob_jeden_trening(l_warstw=1, l_kom_ukr=20, akt_przejsc='sigmoid', l_epok=15, trybwartosci=True,
+                               l_komorek_wy=100, l_komorek_we=20, typ='lstm', learn_rate=0.5, momentum=0.5)
+        elif int(wybor) == 2:
+            sciezka = input("Podaj nazwe pliku do wczytania")
+            a = wczytaj_wykres(sciezka)
+            rysuj_wykres(a)
+        elif int(wybor) == 0:
+            break
+        else:
+            print("Nie ma takiej opcji, wybierz ponownie")
 
 
 main()

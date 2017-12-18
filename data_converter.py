@@ -28,12 +28,16 @@ def konwertuj_na_liczby(dane_wej):
 
 
 def normalizuj(waluta):
-    max = 0
+    max_wart = 0
+    max_vol = 0
     for i, punkt in enumerate(waluta):
-        if punkt[1] > max:
-            max = punkt[1]
+        if punkt[1] > max_wart:
+            max_wart = punkt[1]
+        if punkt[0] > max_vol:
+            max_vol = punkt[0]
     for i, punkt in enumerate(waluta):
-        waluta[i][1] = punkt[1]/max
+        waluta[i][1] = punkt[1]/max_wart
+        waluta[i][0] = punkt[0]/max_vol
 
     return waluta
 
