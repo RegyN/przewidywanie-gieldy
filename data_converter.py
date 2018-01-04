@@ -51,7 +51,7 @@ def normalizuj_dane(dane_wej):
 
 # Dzielę cały zestaw danych wejściowych na testowe i treningowe. Cała metodyka pewnie do poprawy, ale z grubsza robi
 # co trzeba. Jak zmieni się offset to będzie dużo więcej danych, ale mniej się od siebie nawzajem różniących
-def przygotuj_dane_tren_i_test(dane_wej, offset=24, dlug_pak=840, l_pkt_test=360):
+def przygotuj_dane_tren_i_test(dane_wej, offset=24, dlug_pak=600, l_pkt_test=360):
     dlugosc_pakietu = dlug_pak      # ile punktow danych ma być w jednej sekwencji dawanej na LSTM ( (30d.+5d.) x 24h)
     liczba_punktow_test = l_pkt_test       # tyle ostatnich punktow ma nie wchodzic w sklad danych treningowych
     max_pakietow_test = liczba_punktow_test/offset
@@ -68,13 +68,13 @@ def przygotuj_dane_tren_i_test(dane_wej, offset=24, dlug_pak=840, l_pkt_test=360
                 for k in range(0, dlugosc_pakietu):     # wpisuje punkty do danego pakietu tren.
                     pakiet.append([waluta[offset*j+k][0],
                                    waluta[offset*j+k][1],
-                                   waluta[offset*j+k][2]])
+                                   waluta[offset*j+k][2],
+                                   waluta[offset*j+k][3]])
 
                 if j <= liczba_pakietow_tren:
                     dane_tren.append(pakiet)
                 else:
                     dane_test.append(pakiet)
-    print("Dane testowe i treningowe gotowe")
     return dane_test, dane_tren
 
 

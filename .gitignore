@@ -1,3 +1,5 @@
 graphs/
 .idea/
 MNIST_data/
+logs/*.csv
+*.pyc
