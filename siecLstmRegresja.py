@@ -26,14 +26,15 @@ class SiecLstmRegresja:
                             + "O"+str(l_wyjsc)+"A"+f_aktyw)
 
     def trenuj(self, tren_input, tren_output, learn_rate=0.15, momentum=0.15, decay=0.0,
-               batch_size=60, l_epok=1, val_split=0.2):
+               batch_size=60, l_epok=1, l_powtorz_tren=10):
 
         optimizer = keras.optimizers.SGD(lr=learn_rate, momentum=momentum, decay=decay, nesterov=False)
         self.modelSieci.compile(loss="mean_squared_error", optimizer=optimizer)
         # Trenuję sieć
         stopper = EarlyStopping(patience=2)
-        self.modelSieci.fit(tren_input, tren_output, batch_size=batch_size, epochs=l_epok, validation_split=val_split,
-                            verbose=1, callbacks=[self.history, stopper])
+        for x in range(0, l_powtorz_tren):
+            self.modelSieci.fit(tren_input, tren_output, batch_size=batch_size, epochs=l_epok,
+                                verbose=1, callbacks=[self.history, stopper])
         self.kodTreningu = ("LR"+str('%.2F' % learn_rate)+"M"+str('%.2F' % momentum)
                             + "B"+str(batch_size)+"LE"+str(l_epok))
 
@@ -48,7 +49,9 @@ class SiecLstmRegresja:
         mu.zapisz_model(self.modelSieci, self.nazwaModelu + self.kodTreningu + "W.h5")
         self.zapisz_historie()
 
-    def testuj(self, wejscia, wyjscia):
+    def zapisz_model(self):
+        mu.zapisz_model(self.modelSieci, self.nazwaModelu + self.kodTreningu + "W.h5")
+
+    def testuj(self, wejscia):
         predicted = self.modelSieci.predict(wejscia)
-        for i in range(0, 50):
-            print("Rzecz.: "+str(wyjscia[i])+"Przew.: "+str(predicted[i]))
+        return predicted

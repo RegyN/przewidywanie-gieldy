@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 import model_utilities as mu
 import data_converter as dc
 from siecLstmRegresja import SiecLstmRegresja
@@ -21,7 +22,7 @@ class LossHistory(keras.callbacks.Callback):
 
 
 def zapisz_historie(dane_hist, sciezka):
-    sciezka = ".\logs\\"+sciezka
+    sciezka = ".\logs\\" + sciezka
     plik_csv = open(sciezka, "wt")
     writer_csv = csv.writer(plik_csv, delimiter=',', quotechar='|', quoting=csv.QUOTE_NONE)
     for i, row in enumerate(dane_hist.losses):
@@ -60,7 +61,8 @@ def zrob_jeden_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=20,
         l_wyjsc_sieci = 5
 
     # Tworzę model sieci
-    model = mu.zrob_siec(typ, l_komorek_we, akt_przejsc, bias, l_kom_ukr, l_komorek_we, l_warstw, l_wejsc_sieci, l_wyjsc_sieci)
+    model = mu.zrob_siec(typ, l_komorek_we, akt_przejsc, bias, l_kom_ukr, l_komorek_we, l_warstw, l_wejsc_sieci,
+                         l_wyjsc_sieci)
     if model is None:
         return
 
@@ -82,20 +84,20 @@ def zrob_jeden_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=20,
     print(tren_output[15])
     # print(tren_input[15][-1][1])
 
-    nazwa = (typ+"W"+str(l_warstw)+"K"+str(l_kom_ukr)+"LW"+str(l_komorek_we)+"LR"+str('%.2F' % learn_rate)
-             + "M" + str('%.2F' % momentum)+"B"+str(batch_size)+"A"+akt_przejsc+"LE"+str(l_epok)+"W")
+    nazwa = (
+        typ + "W" + str(l_warstw) + "K" + str(l_kom_ukr) + "LW" + str(l_komorek_we) + "LR" + str('%.2F' % learn_rate)
+        + "M" + str('%.2F' % momentum) + "B" + str(batch_size) + "A" + akt_przejsc + "LE" + str(l_epok) + "W")
     if trybwartosci:
-        nazwa = nazwa+"W"
+        nazwa = nazwa + "W"
     else:
-        nazwa = nazwa+"T"
-    zapisz_historie(history, nazwa+".csv")
-    mu.zapisz_model(model, nazwa+".h5")
+        nazwa = nazwa + "T"
+    zapisz_historie(history, nazwa + ".csv")
+    mu.zapisz_model(model, nazwa + ".h5")
 
 
 def zrob_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=20,
                  akt_przejsc='linear', learn_rate=0.15, momentum=0.15, decay=0.0,
                  batch_size=60, l_epok=1, val_split=0.2, trybwartosci=True, typ='lstm', dl_pak=480):
-
     sciezka_csv = ".\gielda.csv"
     tren_input, tren_output = zrob_dane(sciezka_csv, trybwartosci, dl_pak)
 
@@ -132,8 +134,8 @@ def zrob_dane(sciezka_csv, trybwartosci, dl_pak=480):
                           pakiet[dlug_pak + 4 * 24 - 1][1],
                           pakiet[dlug_pak + 5 * 24 - 1][1]]
         else:
-            a = wsp_a_reg_lin(pakiet[dlug_pak:dlug_pak+5*24])
-            if a > 0: # 1 / 200000:
+            a = wsp_a_reg_lin(pakiet[dlug_pak:dlug_pak + 5 * 24])
+            if a > 0:  # 1 / 200000:
                 pakiet_out = [1, 0]
             else:
                 pakiet_out = [0, 1]
@@ -142,13 +144,68 @@ def zrob_dane(sciezka_csv, trybwartosci, dl_pak=480):
     return tren_input, tren_output
 
 
+def testuj_wartosci(siec):
+    testowe = dc.wczytaj_csv(".\\test.csv")
+    testowe = dc.konwertuj_na_liczby(testowe)
+    ilosc_walut = len(testowe)
+    print("Wybierz z " + str(ilosc_walut) + " walut numer waluty do przetestowania")
+    wybor = ""
+    dlugosc_pakietu = 100
+    odleglosc_out = 5
+    offset = 25
+    while True:
+        print("")
+        wybor = input("Wpisz numer waluty")
+        if ilosc_walut > int(wybor) > -1:
+            waluta = testowe[int(wybor)]
+            procentowo = dc.procentowo(waluta)
+            procentowo = np.array(procentowo)
+            testinput, rzeczywisteproc = dc.przygotuj_input_output_wartosci([procentowo], offset=offset,
+                                                                            sekwencja_danych=dlugosc_pakietu,
+                                                                            odleglosc_out=odleglosc_out)
+            print("Dane testowe gotowe")
+            predicted = siec.testuj(testinput)
+            predictedoutput = []
+            realoutput = []
+            ilosc = len(waluta)
+            waluta = waluta[1:ilosc]
+            ilosc = len(waluta)
+            if ilosc > dlugosc_pakietu + odleglosc_out:
+                liczba_pakietow = int((ilosc - dlugosc_pakietu - odleglosc_out) / offset)
+                for j in range(0, liczba_pakietow):
+                    realoutput.append(waluta[offset * j + dlugosc_pakietu + odleglosc_out - 1][1])
+                    predictedoutput.append((predicted[j] + 1) * waluta[offset * j + dlugosc_pakietu - 1][1])
+            x = np.linspace(0, len(realoutput), len(realoutput))
+            plt.plot(x, realoutput, x, predictedoutput)
+            plt.grid(True)
+            plt.show()
+        else:
+            print("Nie ma takiej waluty, wybierz ponownie")
+
+
+def zrob_trening_wartosci(l_warstw=2, l_kom_ukr=32, bias='true',
+                          akt_przejsc='tanh', learn_rate=0.3, momentum=0.3, decay=0.0,
+                          batch_size=15, l_epok=3, l_powtorz_tren=10, typ='lstm', dl_pak=100):
+    treningowe = dc.wczytaj_csv(".\\trening.csv")
+    treningowe = dc.konwertuj_na_liczby(treningowe)
+    treningowe = dc.procentowo_dane(treningowe)
+    treningowe = np.array(treningowe)
+    input, output = dc.przygotuj_input_output_wartosci(treningowe)
+    print("Dane treningowe gotowe")
+    siec = SiecLstmRegresja(l_warstw=l_warstw, l_kom_ukr=l_kom_ukr, bias=bias, l_wejsc=2, f_aktyw=akt_przejsc,
+                            l_wyjsc=1, dl_pak=dl_pak)
+    siec.trenuj(input, output, learn_rate, momentum, decay, batch_size, l_epok, l_powtorz_tren)
+    siec.zapisz_model()
+    return siec
+
+
 def main():
     print("Przewidywanie gieldy kryptowalut")
     wybor = ""
     while True:
         print("")
-        wybor = input("1- uczenie sieci 2- wczytanie wykresu 3 - uruchom skrypt"
-                      " 4 - rysuj wykresy skryptu 0- wyjscie z programu")
+        wybor = input("1- uczenie sieci klasyfikacja 2- wczytanie wykresu 3 - uruchom skrypt"
+                      " 4 - rysuj wykresy skryptu 5 - uczenie i testowanie regresja 0- wyjscie z programu")
         if int(wybor) == 1:
             zrob_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=32,
                          akt_przejsc='tanh', learn_rate=0.3, momentum=0.3, decay=0.0, dl_pak=240,
@@ -192,6 +249,9 @@ def main():
             rysuj_wykres(wczytaj_wykres(".\logs\lstmW4K20LW32LR0.30M0.50B60AtanhLE2W.csv"))
             rysuj_wykres(wczytaj_wykres(".\logs\lstmW4K50LW15LR0.15M0.15B30AtanhLE1W.csv"))
             rysuj_wykres(wczytaj_wykres(".\logs\lstmW15K15LW4LR0.15M0.30B60AtanhLE2W.csv"))
+        elif int(wybor) == 5:
+            siec = zrob_trening_wartosci()
+            testuj_wartosci(siec)
         elif int(wybor) == 0:
             break
         else:
