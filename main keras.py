@@ -7,6 +7,7 @@ from siecLstmRegresja import SiecLstmRegresja
 from siecLstmKlasyfikacja import SiecLstmKlasyfikacja
 import csv
 import keras
+import copy
 from keras.callbacks import EarlyStopping
 from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers import Dense, Activation
@@ -152,7 +153,7 @@ def testuj_wartosci(siec):
     wybor = ""
     dlugosc_pakietu = 100
     odleglosc_out = 5
-    offset = 25
+    offset = 1
     while True:
         print("")
         wybor = input("Wpisz numer waluty")
@@ -168,13 +169,13 @@ def testuj_wartosci(siec):
             predictedoutput = []
             realoutput = []
             ilosc = len(waluta)
-            waluta = waluta[1:ilosc]
-            ilosc = len(waluta)
+            walutareal = waluta[1:ilosc]
+            ilosc = len(walutareal)
             if ilosc > dlugosc_pakietu + odleglosc_out:
                 liczba_pakietow = int((ilosc - dlugosc_pakietu - odleglosc_out) / offset)
                 for j in range(0, liczba_pakietow):
-                    realoutput.append(waluta[offset * j + dlugosc_pakietu + odleglosc_out - 1][1])
-                    predictedoutput.append((predicted[j] + 1) * waluta[offset * j + dlugosc_pakietu - 1][1])
+                    realoutput.append((rzeczywisteproc[j]) * walutareal[offset * j + dlugosc_pakietu - 1][1])
+                    predictedoutput.append((predicted[j]) * walutareal[offset * j + dlugosc_pakietu - 1][1])
             x = np.linspace(0, len(realoutput), len(realoutput))
             plt.plot(x, realoutput, x, predictedoutput)
             plt.grid(True)
@@ -250,7 +251,13 @@ def main():
             rysuj_wykres(wczytaj_wykres(".\logs\lstmW4K50LW15LR0.15M0.15B30AtanhLE1W.csv"))
             rysuj_wykres(wczytaj_wykres(".\logs\lstmW15K15LW4LR0.15M0.30B60AtanhLE2W.csv"))
         elif int(wybor) == 5:
-            siec = zrob_trening_wartosci()
+            siec = zrob_trening_wartosci(l_warstw=3, l_kom_ukr=45, bias='true',
+                          akt_przejsc='tanh', learn_rate=0.3, momentum=0.6, decay=0.0,
+                          batch_size=60, l_epok=20, l_powtorz_tren=3, dl_pak=100)
+            #model = mu.wczytaj_model(".\lstmW2K32I2O1AtanhLR0.30M0.30B60LE8W.h5")
+            #siec = SiecLstmRegresja()
+            #siec.nazwaModelu = "lstmW2K32I2O1Atanh"
+            #siec.modelSieci = model
             testuj_wartosci(siec)
         elif int(wybor) == 0:
             break

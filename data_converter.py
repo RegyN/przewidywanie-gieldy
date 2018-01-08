@@ -50,19 +50,19 @@ def normalizuj_dane(dane_wej):
 
 
 def procentowo(waluta):
+    procentowo = []
     temp = waluta[0][1]
     temp2 = waluta[0][1]
     max_vol = 0
-    for i, punkt in enumerate(waluta):
-        temp2 = punkt[1]
-        waluta[i][1] = (punkt[1] / temp) - 1
-        temp = temp2
-        if punkt[0] > max_vol:
-            max_vol = punkt[0]
-    for i, punkt in enumerate(waluta):
-        waluta[i][0] = punkt[0] / max_vol
+    procentowo.append([waluta[0][0],0])
+    for i in range(1, len(waluta)):
+        procentowo.append([waluta[i][0], ((waluta[i][1]/waluta[i-1][1])-1)])
+        if waluta[i][0] > max_vol:
+            max_vol = waluta[i][0]
+    for i, punkt in enumerate(procentowo):
+        procentowo[i][0] = punkt[0] / max_vol
 
-    return waluta
+    return procentowo
 
 
 def procentowo_dane(dane_wej):
@@ -84,15 +84,25 @@ def przygotuj_input_output_wartosci(dane_wej, offset=25, sekwencja_danych=100, o
 
             liczba_pakietow = int((ilosc - dlugosc_pakietu) / offset)
             for j in range(0, liczba_pakietow):
-                pakiet = []
-                for k in range(0, sekwencja_danych):
-                    pakiet.append([wal[offset * j + k][0],
-                                   wal[offset * j + k][1]])
-                input.append(pakiet)
                 proc = 1
                 for m in range(0, odleglosc_out):
                     proc = proc * (1 + wal[offset * j + sekwencja_danych + m][1])
-                output.append([proc - 1])
+                pakiet = []
+                proc = proc
+                maxproc = proc
+                minproc = proc
+                for k in range(0, sekwencja_danych):
+                    pakiet.append([wal[offset * j + k][0],
+                                   wal[offset * j + k][1] + 1])
+                    if wal[offset * j + k][1] > maxproc:
+                        maxproc = wal[offset * j + k][1]
+                    if wal[offset * j + k][1] < minproc:
+                        minproc = wal[offset * j + k][1]
+                #for k in range(0, sekwencja_danych):
+                #    pakiet[k][1] = (pakiet[k][1] - minproc)/(maxproc-minproc)
+                input.append(pakiet)
+                #proc = (proc - minproc) / (maxproc - minproc)
+                output.append([proc])
     return input, output
 
 # Dzielę cały zestaw danych wejściowych na testowe i treningowe. Cała metodyka pewnie do poprawy, ale z grubsza robi
