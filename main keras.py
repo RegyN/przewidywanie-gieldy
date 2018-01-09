@@ -99,7 +99,7 @@ def zrob_jeden_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=20,
 def zrob_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=20,
                  akt_przejsc='linear', learn_rate=0.15, momentum=0.15, decay=0.0,
                  batch_size=60, l_epok=1, val_split=0.2, trybwartosci=True, typ='lstm', dl_pak=480):
-    sciezka_csv = ".\gielda.csv"
+    sciezka_csv = ".\\trening.csv"
     tren_input, tren_output = zrob_dane(sciezka_csv, trybwartosci, dl_pak)
 
     print("Dane testowe i treningowe gotowe")
@@ -174,8 +174,8 @@ def testuj_wartosci(siec):
             if ilosc > dlugosc_pakietu + odleglosc_out:
                 liczba_pakietow = int((ilosc - dlugosc_pakietu - odleglosc_out) / offset)
                 for j in range(0, liczba_pakietow):
-                    realoutput.append(float(rzeczywisteproc[j]) * walutareal[offset * j + dlugosc_pakietu - 1][1])
-                    predictedoutput.append(float(predicted[j]) * walutareal[offset * j + dlugosc_pakietu - 1][1])
+                    realoutput.append(float(rzeczywisteproc[j][0]) * walutareal[offset * j + dlugosc_pakietu - 1][1])
+                    predictedoutput.append(float(predicted[j][0]) * walutareal[offset * j + dlugosc_pakietu - 1][1])
             x = np.linspace(0, len(realoutput), len(realoutput))
             plt.plot(x, realoutput, x, predictedoutput)
             plt.grid(True)
@@ -251,13 +251,13 @@ def main():
             rysuj_wykres(wczytaj_wykres(".\logs\lstmW4K50LW15LR0.15M0.15B30AtanhLE1W.csv"))
             rysuj_wykres(wczytaj_wykres(".\logs\lstmW15K15LW4LR0.15M0.30B60AtanhLE2W.csv"))
         elif int(wybor) == 5:
-            #siec = zrob_trening_wartosci(l_warstw=3, l_kom_ukr=45, bias='true',
-            #              akt_przejsc='tanh', learn_rate=0.3, momentum=0.6, decay=0.0,
-            #              batch_size=200, l_epok=13, l_powtorz_tren=2, dl_pak=100)
-            model = mu.wczytaj_model(".\lstmW3K45I2O1AtanhLR0.30M0.60B200LE13W.h5")
-            siec = SiecLstmRegresja()
-            siec.nazwaModelu = "lstmW3K45I2O1Atanh"
-            siec.modelSieci = model
+            siec = zrob_trening_wartosci(l_warstw=3, l_kom_ukr=45, bias='true',
+                          akt_przejsc='tanh', learn_rate=0.6, momentum=0.7, decay=0.0,
+                          batch_size=200, l_epok=1, l_powtorz_tren=2, dl_pak=100)
+            #model = mu.wczytaj_model(".\lstmW3K45I2O1AtanhLR0.30M0.60B200LE13W.h5")
+            #siec = SiecLstmRegresja()
+            #siec.nazwaModelu = "lstmW3K45I2O1Atanh"
+            #siec.modelSieci = model
             testuj_wartosci(siec)
         elif int(wybor) == 0:
             break
