@@ -161,11 +161,22 @@ def testuj_wartosci(siec):
             waluta = testowe[int(wybor)]
             procentowo = dc.procentowo(waluta)
             procentowo = np.array(procentowo)
-            testinput, rzeczywisteproc = dc.przygotuj_input_output_wartosci([procentowo], offset=offset,
+            inputreal, tmp, min, max = dc.przygotuj_input_output_wartosci([waluta], offset=offset,
                                                                             sekwencja_danych=dlugosc_pakietu,
                                                                             odleglosc_out=odleglosc_out)
+            testinput, rzeczywisteproc, minproc, maxproc = dc.przygotuj_input_output_wartosci([procentowo], offset=offset,
+                                                                            sekwencja_danych=dlugosc_pakietu,
+                                                                            odleglosc_out=odleglosc_out)
+            rzeczproc = []
+            wartosci = []
+            for j in range(0, len(inputreal)):
+                wartosci.append(inputreal[j][dlugosc_pakietu-1][1]*(max-min) + min)
+            for j in range(0, len(rzeczywisteproc)):
+                rzeczproc.append((rzeczywisteproc[j][0]*(maxproc - minproc))+minproc)
             print("Dane testowe gotowe")
             predicted = siec.testuj(testinput)
+            for j in range(0, len(predicted)):
+                predicted[j] = (predicted[j]*(maxproc - minproc))+minproc
             predictedoutput = []
             realoutput = []
             ilosc = len(waluta)
@@ -173,9 +184,9 @@ def testuj_wartosci(siec):
             ilosc = len(walutareal)
             if ilosc > dlugosc_pakietu + odleglosc_out:
                 liczba_pakietow = int((ilosc - dlugosc_pakietu - odleglosc_out) / offset)
-                for j in range(0, liczba_pakietow):
-                    realoutput.append(float(rzeczywisteproc[j]) * walutareal[offset * j + dlugosc_pakietu - 1][1])
-                    predictedoutput.append(float(predicted[j]) * walutareal[offset * j + dlugosc_pakietu - 1][1])
+                for j in range(0, len(inputreal)):
+                    predictedoutput.append((predicted[j]+1)*wartosci[j])
+                    realoutput.append((rzeczproc[j]+1)*wartosci[j])
             x = np.linspace(0, len(realoutput), len(realoutput))
             plt.plot(x, realoutput, x, predictedoutput)
             plt.grid(True)
@@ -191,7 +202,7 @@ def zrob_trening_wartosci(l_warstw=2, l_kom_ukr=32, bias='true',
     treningowe = dc.konwertuj_na_liczby(treningowe)
     treningowe = dc.procentowo_dane(treningowe)
     treningowe = np.array(treningowe)
-    input, output = dc.przygotuj_input_output_wartosci(treningowe)
+    input, output, min, max = dc.przygotuj_input_output_wartosci(treningowe)
     print("Dane treningowe gotowe")
     siec = SiecLstmRegresja(l_warstw=l_warstw, l_kom_ukr=l_kom_ukr, bias=bias, l_wejsc=2, f_aktyw=akt_przejsc,
                             l_wyjsc=1, dl_pak=dl_pak)
@@ -252,9 +263,9 @@ def main():
             rysuj_wykres(wczytaj_wykres(".\logs\lstmW15K15LW4LR0.15M0.30B60AtanhLE2W.csv"))
         elif int(wybor) == 5:
             #siec = zrob_trening_wartosci(l_warstw=3, l_kom_ukr=45, bias='true',
-            #              akt_przejsc='tanh', learn_rate=0.3, momentum=0.6, decay=0.0,
-            #              batch_size=200, l_epok=13, l_powtorz_tren=2, dl_pak=100)
-            model = mu.wczytaj_model(".\lstmW3K45I2O1AtanhLR0.30M0.60B200LE13W.h5")
+            #              akt_przejsc='tanh', learn_rate=0.2, momentum=0.7, decay=0.0,
+            #              batch_size=200, l_epok=20, l_powtorz_tren=3, dl_pak=100)
+            model = mu.wczytaj_model(".\lstmW3K45I2O1AtanhLR0.20M0.70B200LE20W.h5")
             siec = SiecLstmRegresja()
             siec.nazwaModelu = "lstmW3K45I2O1Atanh"
             siec.modelSieci = model

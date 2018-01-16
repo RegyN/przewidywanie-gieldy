@@ -76,6 +76,8 @@ def przygotuj_input_output_wartosci(dane_wej, offset=25, sekwencja_danych=100, o
     dlugosc_pakietu = sekwencja_danych+odleglosc_out
     input = []
     output = []
+    max = []
+    min = []
     for i, waluta in enumerate(dane_wej):
         ilosc = len(waluta)
         wal = waluta[1:ilosc] # pierwszy procent jest zerowy
@@ -88,22 +90,24 @@ def przygotuj_input_output_wartosci(dane_wej, offset=25, sekwencja_danych=100, o
                 for m in range(0, odleglosc_out):
                     proc = proc * (1 + wal[offset * j + sekwencja_danych + m][1])
                 pakiet = []
-                proc = proc
+                proc = proc - 1
                 maxproc = proc
                 minproc = proc
                 for k in range(0, sekwencja_danych):
                     pakiet.append([wal[offset * j + k][0],
-                                   wal[offset * j + k][1] + 1])
+                                   wal[offset * j + k][1]])
                     if wal[offset * j + k][1] > maxproc:
                         maxproc = wal[offset * j + k][1]
                     if wal[offset * j + k][1] < minproc:
                         minproc = wal[offset * j + k][1]
-                #for k in range(0, sekwencja_danych):
-                #    pakiet[k][1] = (pakiet[k][1] - minproc)/(maxproc-minproc)
+                for k in range(0, sekwencja_danych):
+                    pakiet[k][1] = (pakiet[k][1] - minproc)/(maxproc-minproc)
                 input.append(pakiet)
-                #proc = (proc - minproc) / (maxproc - minproc)
+                proc = (proc - minproc) / (maxproc - minproc)
                 output.append([proc])
-    return input, output
+                max.append(maxproc)
+                min.append(minproc)
+    return input, output, minproc, maxproc
 
 # Dzielę cały zestaw danych wejściowych na testowe i treningowe. Cała metodyka pewnie do poprawy, ale z grubsza robi
 # co trzeba. Jak zmieni się offset to będzie dużo więcej danych, ale mniej się od siebie nawzajem różniących
