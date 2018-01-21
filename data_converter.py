@@ -72,7 +72,7 @@ def procentowo_dane(dane_wej):
     return dane_wej
 
 
-def przygotuj_input_output_wartosci(dane_wej, offset=25, sekwencja_danych=100, odleglosc_out=5):
+def przygotuj_input_output_wartosci(dane_wej, offset=12, sekwencja_danych=100, odleglosc_out=5):
     dlugosc_pakietu = sekwencja_danych+odleglosc_out
     input = []
     output = []
