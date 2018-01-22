@@ -13,7 +13,7 @@ from wykresy import wczytaj_wykres, rysuj_wykres
 class SiecLstmRegresja:
     modelSieci = None
 
-    def __init__(self, l_warstw=2, l_kom_ukr=20, bias='true', l_wejsc=2, f_aktyw='linear', l_wyjsc=1, dl_pak=720):
+    def __init__(self, l_warstw=2, l_kom_ukr=20, bias='true', l_wejsc=2, f_aktyw='linear', l_wyjsc=1, dl_pak=100):
 
         self.history = mu.LossHistory()
         self.modelSieci = keras.Sequential()
@@ -47,7 +47,7 @@ class SiecLstmRegresja:
                             + "B"+str(batch_size)+"LE"+str(l_epok))
 
     def zapisz_historie(self):
-        sciezka = ".\logs\\" + self.nazwaModelu + self.kodTreningu + "W.csv"
+        sciezka = ".\\files\\" + self.nazwaModelu + self.kodTreningu + "W.csv"
         plik_csv = open(sciezka, "wt")
         writer_csv = csv.writer(plik_csv, delimiter=',', quotechar='|', quoting=csv.QUOTE_NONE)
         for i, row in enumerate(self.history.losses):

@@ -45,7 +45,7 @@ class SiecLstmKlasyfikacja:
                             + "B"+str(batch_size)+"LE"+str(l_epok))
 
     def zapisz_historie(self):
-        sciezka = ".\logs\\" + self.nazwaModelu + self.kodTreningu + "T.csv"
+        sciezka = ".\\files\\" + self.nazwaModelu + self.kodTreningu + "T.csv"
         plik_csv = open(sciezka, "wt")
         writer_csv = csv.writer(plik_csv, delimiter=',', quotechar='|', quoting=csv.QUOTE_NONE)
         for i, row in enumerate(self.history.losses):

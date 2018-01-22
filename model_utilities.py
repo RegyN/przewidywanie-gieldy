@@ -13,11 +13,11 @@ class LossHistory(keras.callbacks.Callback):
 
 
 def zapisz_model(model, sciezka):
-    model.save(".\logs\\"+sciezka)
+    model.save(".\\files\\"+sciezka)
 
 
 def wczytaj_model(sciezka):
-    model = load_model(".\logs\\"+sciezka)
+    model = load_model(".\\files\\"+sciezka)
     return model
 
 

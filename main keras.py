@@ -22,7 +22,7 @@ class LossHistory(keras.callbacks.Callback):
 
 
 def zapisz_historie(dane_hist, sciezka):
-    sciezka = ".\logs\\" + sciezka
+    sciezka = ".\\files\\" + sciezka
     plik_csv = open(sciezka, "wt")
     writer_csv = csv.writer(plik_csv, delimiter=',', quotechar='|', quoting=csv.QUOTE_NONE)
     for i, row in enumerate(dane_hist.losses):
@@ -51,7 +51,7 @@ def wsp_a_reg_lin(dane):
 def zrob_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=20,
                  akt_przejsc='linear', learn_rate=0.15, momentum=0.15, decay=0.0,
                  batch_size=60, l_epok=1, val_split=0.2, trybwartosci=True, typ='lstm', dl_pak=480):
-    sciezka_csv = ".\\trening.csv"
+    sciezka_csv = ".\\files\\trening.csv"
     tren_input, tren_output = zrob_dane(sciezka_csv, trybwartosci, dl_pak)
 
     print("Dane testowe i treningowe gotowe")
@@ -101,10 +101,10 @@ def zrob_dane(sciezka_csv, trybwartosci, dl_pak=480):
     return tren_input, tren_output
 
 
-def zrob_trening_wartosci(l_warstw=2, l_kom_ukr=32, bias='true',
+def zrob_trening_wartosci(dane, l_warstw=2, l_kom_ukr=32, bias='true',
                           akt_przejsc='tanh', learn_rate=0.3, momentum=0.3, decay=0.0,
-                          batch_size=15, l_epok=3, l_powtorz_tren=10, typ='lstm', dl_pak=100):
-    treningowe = dc.wczytaj_csv(".\\trening.csv")
+                          batch_size=15, l_epok=3, l_powtorz_tren=10, typ='lstm'):
+    treningowe = dc.wczytaj_csv(".\\files\\"+dane)
     treningowe = dc.konwertuj_na_liczby(treningowe)
     treningowe = dc.procentowo_dane(treningowe)
     treningowe = np.array(treningowe)
@@ -112,9 +112,9 @@ def zrob_trening_wartosci(l_warstw=2, l_kom_ukr=32, bias='true',
     print("Dane treningowe gotowe")
 
     if typ == 'lstm':
-        siec = SiecLstmRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=dl_pak)
+        siec = SiecLstmRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=100)
     elif typ == 'ff':
-        siec = SiecFFRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=dl_pak)
+        siec = SiecFFRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=100)
     else:
         print("Błąd: Wybrano nieprawidłowy typ sieci")
         return None
@@ -129,32 +129,45 @@ def main():
     wybor = ""
     while True:
         print("")
-        wybor = input("1- ucz siec 2- wczytaj wykres loss 3 - uruchom skrypt"
-                      " 4 - rysuj wykresy 5 - testuj regresje 0- wyjscie z programu")
+        wybor = input("1- trenuj sieć\n2 - testy statystyczne\n3 - wykresy predykcji\n0- wyjscie z programu\n")
         if int(wybor) == 1:
-            siec = zrob_trening(l_warstw=4, l_kom_ukr=500, bias='true', l_komorek_we=32,
-                                akt_przejsc='tanh', learn_rate=0.4, momentum=0.6, decay=0.0, dl_pak=100,
-                                batch_size=5, l_epok=10, val_split=0.2, trybwartosci=True, typ='ff')
-            ft.testuj_wartosci_norm(siec)
+            l_warstw = input("Podaj liczbę warstw sieci: ")
+            l_kom_ukr = input("Podaj liczbę komórek ukrytych sieci: ")
+            typ_sieci = input("Podaj typ sieci (lstm lub ff): ")
+            akt_przejsc = input("Podaj funkcję aktywacji przejścia(sigmoid/tanh/relu/softsign/softplus/linear): ")
+            learn_rate = input("Podaj szybkość nauki: ")
+            momentum = input("Podaj pęd nauki: ")
+            decay = input("Podaj wskaźnik zanikania nauki: ")
+            batch_size = input("Podaj długość batcha: ")
+            l_epok = input("Podaj liczbę epok: ")
+            l_powtorz_tren = input("Podaj liczbę powtórzeń treningu: ")
+            dane = input("Podaj nazwę pliku z danymi treningowymi: ")
+            zrob_trening_wartosci(dane, l_warstw=int(l_warstw), l_kom_ukr=int(l_kom_ukr), bias='true', typ=typ_sieci,
+                                  akt_przejsc=akt_przejsc, learn_rate=float(learn_rate), momentum=float(momentum),
+                                  decay=float(decay),
+                                  batch_size=int(batch_size), l_epok=int(l_epok), l_powtorz_tren=int(l_powtorz_tren))
         elif int(wybor) == 2:
-            sciezka = input("Podaj nazwe pliku do wczytania")
-            a = wczytaj_wykres(sciezka)
-            rysuj_wykres(a)
+            sciezka = input("Podaj nazwe pliku do wczytania: ")
+            dane = input("Podaj nazwę pliku z danymi testowymi: ")
+            model = mu.wczytaj_model(sciezka)
+            if sciezka.startswith("ff"):
+                siec = SiecFFRegresja()
+            else:
+                siec = SiecLstmRegresja()
+            siec.modelSieci = model
+            ft.zrob_testy_stat(siec, dane)
         elif int(wybor) == 3:
-            print("Wybrana funkcja czasowo niedostępna")
-        elif int(wybor) == 4:
-            print("Wybrana funkcja czasowo niedostępna")
-        elif int(wybor) == 5:
-            typ_sieci = 'lstm'
-            siec = zrob_trening_wartosci(l_warstw=3, l_kom_ukr=40, bias='true', typ=typ_sieci,
-                                         akt_przejsc='sigmoid', learn_rate=0.7, momentum=0.8, decay=0.15,
-                                         batch_size=60, l_epok=20, l_powtorz_tren=1, dl_pak=100)
-            # model = mu.wczytaj_model("lstmW3K45I2O1AtanhLR0.20M0.70B200LE20W.h5")
-            # siec = SiecLstmRegresja()
-            # siec.nazwaModelu = "lstmW2K20I4O5Atanh"
-            # siec.modelSieci = model
-            ft.zrob_testy_stat(siec)
-            ft.testuj_wartosci_proc(siec, typ_sieci)
+            sciezka = input("Podaj nazwe pliku do wczytania: ")
+            dane = input("Podaj nazwę pliku z danymi testowymi: ")
+            model = mu.wczytaj_model(sciezka)
+            if sciezka.startswith("ff"):
+                siec = SiecFFRegresja()
+                typ_sieci = "ff"
+            else:
+                siec = SiecLstmRegresja()
+                typ_sieci = "lstm"
+            siec.modelSieci = model
+            ft.testuj_wartosci_proc(siec, dane, typ_sieci)
         elif int(wybor) == 0:
             break
         else:

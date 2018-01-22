@@ -51,11 +51,8 @@ def wyznacz_sredni_blad(wyj_rzecz, wyj_pred, wejscia):
     return blad
 
 
-def zrob_testy_stat(siec, typ_sieci='lstm', na_treningowych=False):
-    if na_treningowych:
-        sciezka = ".\\trening.csv"
-    else:
-        sciezka = ".\\test.csv"
+def zrob_testy_stat(siec, dane, typ_sieci='lstm'):
+    sciezka = ".\\files\\"+dane
     testowe = dc.wczytaj_csv(sciezka)
     testowe = dc.konwertuj_na_liczby(testowe)
     liczba_walut = len(testowe)
@@ -88,14 +85,14 @@ def zrob_testy_stat(siec, typ_sieci='lstm', na_treningowych=False):
         rzeczproc = []
         wartosci = []
         for j in range(0, len(inputreal)):
-            wartosci.append(inputreal[j][dlugosc_pakietu - 1][1] * (max - min) + min)
+            wartosci.append(inputreal[j][dlugosc_pakietu - 1][1] * (max[j] - min[j]) + min[j])
         for j in range(0, len(rzeczywisteproc)):
-            rzeczproc.append((rzeczywisteproc[j][0] * (maxproc - minproc)) + minproc)
+            rzeczproc.append((rzeczywisteproc[j][0] * (maxproc[j] - minproc[j])) + minproc[j])
         if typ_sieci == 'ff':
             testinput = dc.przeksztalc_dane_na_ff(testinput)
         predicted = siec.testuj(testinput)
         for j in range(0, len(predicted)):
-            predicted[j] = (predicted[j] * (maxproc - minproc)) + minproc
+            predicted[j] = (predicted[j] * (maxproc[j] - minproc[j])) + minproc[j]
         predictedoutput = []
         realoutput = []
         ilosc = len(waluta)-1
@@ -166,14 +163,14 @@ def testuj_trendy(siec, typ_sieci='lstm', na_treningowych=False):
         rzeczproc = []
         wartosci = []
         for j in range(0, len(inputreal)):
-            wartosci.append(inputreal[j][dlugosc_pakietu - 1][1] * (max - min) + min)
+            wartosci.append(inputreal[j][dlugosc_pakietu - 1][1] * (max[j] - min[j]) + min[j])
         for j in range(0, len(rzeczywisteproc)):
-            rzeczproc.append((rzeczywisteproc[j][0] * (maxproc - minproc)) + minproc)
+            rzeczproc.append((rzeczywisteproc[j][0] * (maxproc[j] - minproc[j])) + minproc[j])
         if typ_sieci == 'ff':
             testinput = dc.przeksztalc_dane_na_ff(testinput)
         predicted = siec.testuj(testinput)
         for j in range(0, len(predicted)):
-            predicted[j] = (predicted[j] * (maxproc - minproc)) + minproc
+            predicted[j] = (predicted[j] * (maxproc[j] - minproc[j])) + minproc[j]
         predictedoutput = []
         realoutput = []
         ilosc = len(waluta)-1
@@ -189,11 +186,8 @@ def testuj_trendy(siec, typ_sieci='lstm', na_treningowych=False):
     return zgodnosc_calk
 
 
-def testuj_wartosci_proc(siec, typ_sieci='lstm', na_treningowych=False):
-    if na_treningowych:
-        sciezka = ".\\trening.csv"
-    else:
-        sciezka = ".\\test.csv"
+def testuj_wartosci_proc(siec, dane, typ_sieci='lstm'):
+    sciezka = ".\\files\\" + dane
     testowe = dc.wczytaj_csv(sciezka)
     testowe = dc.konwertuj_na_liczby(testowe)
     ilosc_walut = len(testowe)
@@ -204,9 +198,11 @@ def testuj_wartosci_proc(siec, typ_sieci='lstm', na_treningowych=False):
     offset = 1
     while True:
         print("")
-        wybor = input("Wpisz numer waluty")
-        if ilosc_walut > int(wybor) > -1:
-            waluta = testowe[int(wybor)]
+        wybor = input("Wpisz numer waluty (lub 0 by wyjść z programu)")
+        if int(wybor) == 0:
+            break
+        if ilosc_walut > int(wybor)-1 > -1:
+            waluta = testowe[int(wybor)-1]
             procentowo = dc.procentowo(waluta)
             procentowo = np.array(procentowo)
             inputreal, tmp, min, max = dc.przygotuj_input_output_wartosci([waluta], offset=offset,
@@ -219,15 +215,15 @@ def testuj_wartosci_proc(siec, typ_sieci='lstm', na_treningowych=False):
             rzeczproc = []
             wartosci = []
             for j in range(0, len(inputreal)):
-                wartosci.append(inputreal[j][dlugosc_pakietu - 1][1] * (max - min) + min)
+                wartosci.append(inputreal[j][dlugosc_pakietu - 1][1] * (max[j] - min[j]) + min[j])
             for j in range(0, len(rzeczywisteproc)):
-                rzeczproc.append((rzeczywisteproc[j][0] * (maxproc - minproc)) + minproc)
+                rzeczproc.append((rzeczywisteproc[j][0] * (maxproc[j] - minproc[j])) + minproc[j])
             print("Dane testowe gotowe")
             if typ_sieci == 'ff':
                 testinput = dc.przeksztalc_dane_na_ff(testinput)
             predicted = siec.testuj(testinput)
             for j in range(0, len(predicted)):
-                predicted[j] = (predicted[j] * (maxproc - minproc)) + minproc
+                predicted[j] = (predicted[j] * (maxproc[j] - minproc[j])) + minproc[j]
             predictedoutput = []
             realoutput = []
             ilosc = len(waluta)-1

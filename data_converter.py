@@ -105,7 +105,7 @@ def przygotuj_input_output_wartosci(dane_wej, offset=12, sekwencja_danych=100, o
                 output.append([proc])
                 max.append(maxproc)
                 min.append(minproc)
-    return input, output, minproc, maxproc
+    return input, output, min, max
 
 
 # Przekształcam dane z postaci tablicy 3D do tablicy 2D dla sieci FF.
