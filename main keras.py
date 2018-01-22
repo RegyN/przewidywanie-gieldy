@@ -3,14 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import model_utilities as mu
 import data_converter as dc
+import funkcje_testujace as ft
 from siecLstmRegresja import SiecLstmRegresja
+from siecFFRegresja import SiecFFRegresja
 from siecLstmKlasyfikacja import SiecLstmKlasyfikacja
 import csv
 import keras
 import copy
-from keras.callbacks import EarlyStopping
-from keras.layers.recurrent import LSTM, SimpleRNN
-from keras.layers import Dense, Activation
 from wykresy import wczytaj_wykres, rysuj_wykres
 
 
@@ -56,9 +55,16 @@ def zrob_trening(l_warstw=2, l_kom_ukr=20, bias='true', l_komorek_we=20,
     tren_input, tren_output = zrob_dane(sciezka_csv, trybwartosci, dl_pak)
 
     print("Dane testowe i treningowe gotowe")
-
-    siec = SiecLstmRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=dl_pak)
+    if typ == 'lstm':
+        siec = SiecLstmRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=dl_pak)
+    elif typ == 'ff':
+        siec = SiecFFRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=dl_pak)
+    else:
+        print("Błąd: Wybrano nieprawidłowy typ sieci")
+        return None
+    print("Sieć gotowa, rozpoczynam trening")
     siec.trenuj(tren_input, tren_output, learn_rate, momentum, decay, batch_size, l_epok, val_split)
+    print("Trening zakończony, zapisuję dziennik")
     siec.zapisz_wyniki()
 
     return siec
@@ -95,95 +101,6 @@ def zrob_dane(sciezka_csv, trybwartosci, dl_pak=480):
     return tren_input, tren_output
 
 
-def testuj_wartosci_norm(siec):
-    testowe = dc.wczytaj_csv(".\\test.csv")
-    testowe = dc.konwertuj_na_liczby(testowe)
-    testowe = dc.normalizuj_dane(testowe)
-    ilosc_walut = len(testowe)
-    print("Wybierz z " + str(ilosc_walut) + " walut numer waluty do przetestowania")
-    wybor = ""
-    dlugosc_pakietu = 100
-    odleglosc_out = 24
-    offset = 1
-    while True:
-        print("")
-        wybor = input("Wpisz numer waluty")
-        if ilosc_walut > int(wybor) > -1:
-            waluta = testowe[int(wybor)]
-            waluta = np.array(waluta)
-
-            pred = []
-            real = []
-            for i, row in enumerate(waluta):
-                if i >= len(waluta) - dlugosc_pakietu - odleglosc_out:
-                    break
-                pred.append(waluta[i:i + 100])
-                real.append(waluta[i + 100 + odleglosc_out][1])
-            pred = np.array(pred)
-            predicted = siec.testuj(pred)
-            x = np.linspace(0, len(real), len(real))
-            plt.plot(x, real, "g-", x, predicted, "r-")
-            plt.grid(True)
-            plt.show()
-        else:
-            print("Nie ma takiej waluty, wybierz ponownie")
-
-
-def testuj_wartosci_proc(siec, na_treningowych=False):
-    if na_treningowych:
-        sciezka = ".\\trening.csv"
-    else:
-        sciezka = ".\\test.csv"
-    testowe = dc.wczytaj_csv(sciezka)
-    testowe = dc.konwertuj_na_liczby(testowe)
-    ilosc_walut = len(testowe)
-    print("Wybierz z " + str(ilosc_walut) + " walut numer waluty do przetestowania")
-    wybor = ""
-    dlugosc_pakietu = 100
-    odleglosc_out = 5
-    offset = 1
-    while True:
-        print("")
-        wybor = input("Wpisz numer waluty")
-        if ilosc_walut > int(wybor) > -1:
-            waluta = testowe[int(wybor)]
-            procentowo = dc.procentowo(waluta)
-            procentowo = np.array(procentowo)
-            inputreal, tmp, min, max = dc.przygotuj_input_output_wartosci([waluta], offset=offset,
-                                                                          sekwencja_danych=dlugosc_pakietu,
-                                                                          odleglosc_out=odleglosc_out)
-            testinput, rzeczywisteproc, minproc, maxproc = dc.przygotuj_input_output_wartosci([procentowo],
-                                                                                              offset=offset,
-                                                                                              sekwencja_danych=dlugosc_pakietu,
-                                                                                              odleglosc_out=odleglosc_out)
-            rzeczproc = []
-            wartosci = []
-            for j in range(0, len(inputreal)):
-                wartosci.append(inputreal[j][dlugosc_pakietu - 1][1] * (max - min) + min)
-            for j in range(0, len(rzeczywisteproc)):
-                rzeczproc.append((rzeczywisteproc[j][0] * (maxproc - minproc)) + minproc)
-            print("Dane testowe gotowe")
-            predicted = siec.testuj(testinput)
-            for j in range(0, len(predicted)):
-                predicted[j] = (predicted[j] * (maxproc - minproc)) + minproc
-            predictedoutput = []
-            realoutput = []
-            ilosc = len(waluta)
-            walutareal = waluta[1:ilosc]
-            ilosc = len(walutareal)
-            if ilosc > dlugosc_pakietu + odleglosc_out:
-                liczba_pakietow = int((ilosc - dlugosc_pakietu - odleglosc_out) / offset)
-                for j in range(0, len(inputreal)):
-                    predictedoutput.append((predicted[j] + 1) * wartosci[j])
-                    realoutput.append((rzeczproc[j] + 1) * wartosci[j])
-            x = np.linspace(0, len(realoutput), len(realoutput))
-            plt.plot(x, realoutput, x, predictedoutput)
-            plt.grid(True)
-            plt.show()
-        else:
-            print("Nie ma takiej waluty, wybierz ponownie")
-
-
 def zrob_trening_wartosci(l_warstw=2, l_kom_ukr=32, bias='true',
                           akt_przejsc='tanh', learn_rate=0.3, momentum=0.3, decay=0.0,
                           batch_size=15, l_epok=3, l_powtorz_tren=10, typ='lstm', dl_pak=100):
@@ -193,8 +110,15 @@ def zrob_trening_wartosci(l_warstw=2, l_kom_ukr=32, bias='true',
     treningowe = np.array(treningowe)
     input, output, min, max = dc.przygotuj_input_output_wartosci(treningowe)
     print("Dane treningowe gotowe")
-    siec = SiecLstmRegresja(l_warstw=l_warstw, l_kom_ukr=l_kom_ukr, bias=bias, l_wejsc=2, f_aktyw=akt_przejsc,
-                            l_wyjsc=1, dl_pak=dl_pak)
+
+    if typ == 'lstm':
+        siec = SiecLstmRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=dl_pak)
+    elif typ == 'ff':
+        siec = SiecFFRegresja(l_warstw, l_kom_ukr, bias, l_wejsc=2, f_aktyw=akt_przejsc, dl_pak=dl_pak)
+    else:
+        print("Błąd: Wybrano nieprawidłowy typ sieci")
+        return None
+
     siec.trenuj(input, output, learn_rate, momentum, decay, batch_size, l_epok, l_powtorz_tren)
     siec.zapisz_model()
     return siec
@@ -208,10 +132,10 @@ def main():
         wybor = input("1- ucz siec 2- wczytaj wykres loss 3 - uruchom skrypt"
                       " 4 - rysuj wykresy 5 - testuj regresje 0- wyjscie z programu")
         if int(wybor) == 1:
-            siec = zrob_trening(l_warstw=8, l_kom_ukr=20, bias='true', l_komorek_we=32,
-                         akt_przejsc='tanh', learn_rate=0.8, momentum=0.8, decay=0.0, dl_pak=100,
-                         batch_size=60, l_epok=50, val_split=0.2, trybwartosci=True, typ='lstm')
-            testuj_wartosci_norm(siec)
+            siec = zrob_trening(l_warstw=4, l_kom_ukr=500, bias='true', l_komorek_we=32,
+                                akt_przejsc='tanh', learn_rate=0.4, momentum=0.6, decay=0.0, dl_pak=100,
+                                batch_size=5, l_epok=10, val_split=0.2, trybwartosci=True, typ='ff')
+            ft.testuj_wartosci_norm(siec)
         elif int(wybor) == 2:
             sciezka = input("Podaj nazwe pliku do wczytania")
             a = wczytaj_wykres(sciezka)
@@ -221,14 +145,16 @@ def main():
         elif int(wybor) == 4:
             print("Wybrana funkcja czasowo niedostępna")
         elif int(wybor) == 5:
-            siec = zrob_trening_wartosci(l_warstw=3, l_kom_ukr=45, bias='true',
-                         akt_przejsc='tanh', learn_rate=0.6, momentum=0.7, decay=0.0,
-                         batch_size=60, l_epok=20, l_powtorz_tren=2, dl_pak=100)
+            typ_sieci = 'lstm'
+            siec = zrob_trening_wartosci(l_warstw=3, l_kom_ukr=40, bias='true', typ=typ_sieci,
+                                         akt_przejsc='sigmoid', learn_rate=0.7, momentum=0.8, decay=0.15,
+                                         batch_size=60, l_epok=20, l_powtorz_tren=1, dl_pak=100)
             # model = mu.wczytaj_model("lstmW3K45I2O1AtanhLR0.20M0.70B200LE20W.h5")
             # siec = SiecLstmRegresja()
             # siec.nazwaModelu = "lstmW2K20I4O5Atanh"
             # siec.modelSieci = model
-            testuj_wartosci_proc(siec)
+            ft.zrob_testy_stat(siec)
+            ft.testuj_wartosci_proc(siec, typ_sieci)
         elif int(wybor) == 0:
             break
         else:

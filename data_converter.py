@@ -51,10 +51,8 @@ def normalizuj_dane(dane_wej):
 
 def procentowo(waluta):
     procentowo = []
-    temp = waluta[0][1]
-    temp2 = waluta[0][1]
     max_vol = 0
-    procentowo.append([waluta[0][0],0])
+    procentowo.append([waluta[0][0], 0])
     for i in range(1, len(waluta)):
         procentowo.append([waluta[i][0], ((waluta[i][1]/waluta[i-1][1])-1)])
         if waluta[i][0] > max_vol:
@@ -109,8 +107,21 @@ def przygotuj_input_output_wartosci(dane_wej, offset=12, sekwencja_danych=100, o
                 min.append(minproc)
     return input, output, minproc, maxproc
 
-# Dzielę cały zestaw danych wejściowych na testowe i treningowe. Cała metodyka pewnie do poprawy, ale z grubsza robi
-# co trzeba. Jak zmieni się offset to będzie dużo więcej danych, ale mniej się od siebie nawzajem różniących
+
+# Przekształcam dane z postaci tablicy 3D do tablicy 2D dla sieci FF.
+def przeksztalc_dane_na_ff(dane):
+    newdane = []
+    for i, pakiet in enumerate(dane):
+        newpakiet = []
+        for j, punkt in enumerate(pakiet):
+            newpakiet.append(punkt[0])
+            newpakiet.append(punkt[1])
+        newdane.append(newpakiet)
+    return newdane
+
+
+# Dzielę cały zestaw danych wejściowych na testowe i treningowe.
+# Jak zmniejszy się offset to będzie dużo więcej danych, ale mniej się od siebie nawzajem różniących
 def przygotuj_dane_tren_i_test(dane_wej, offset=24, dlug_pak=600, l_pkt_test=360):
     dlugosc_pakietu = dlug_pak  # ile punktow danych ma być w jednej sekwencji dawanej na LSTM ( (30d.+5d.) x 24h)
     liczba_punktow_test = l_pkt_test  # tyle ostatnich punktow ma nie wchodzic w sklad danych treningowych
